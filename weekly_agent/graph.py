@@ -9,8 +9,10 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.store.base import BaseStore
+from langgraph.types import RetryPolicy
 
 from . import memory
+from .guardrails import should_retry
 from .llm import default_llm
 from .prompts import PROMPT_VERSION, PROMPTS
 from .tools import TOOLS
@@ -29,8 +31,10 @@ def build_app(llm=None, store=None, checkpointer=None, prompt_version=None):
         return {"messages": [llm.invoke(messages)]}
 
     graph = StateGraph(MessagesState)  # 状态：一串对话消息
-    graph.add_node("agent", agent)
-    graph.add_node("tools", ToolNode(ALL_TOOLS))  # 节点二：执行工具
+    # EP06：模型调用偶尔失败时自动重试，最多 3 次，间隔逐次拉长
+    graph.add_node("agent", agent, retry_policy=RetryPolicy(max_attempts=3, retry_on=should_retry))
+    # 节点二：执行工具。EP06：工具报错不崩溃，把错误信息交给模型处理
+    graph.add_node("tools", ToolNode(ALL_TOOLS, handle_tool_errors=True))
     graph.add_edge(START, "agent")
     graph.add_conditional_edges("agent", tools_condition)  # 有条件的边：要用工具→tools，否则结束
     graph.add_edge("tools", "agent")  # 固定的边：工具执行完，回到 agent

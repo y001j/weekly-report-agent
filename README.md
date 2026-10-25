@@ -24,11 +24,13 @@ weekly-report-agent/
 │   ├── tools.py          工具：Agent 的「手」（读笔记、存周报、发群消息）
 │   ├── memory.py         记忆：跨任务的长期记忆（EP03）
 │   ├── tracing.py        追踪：接入 Langfuse，统计用量（EP04）
+│   ├── guardrails.py     护栏：资料隔离、输出检查、重试规则（EP06）
 │   ├── graph.py          图：两个节点、三条边，把大脑和手连起来
 │   ├── runner.py         运行：执行图，遇到暂停就问人
 │   ├── display.py        显示：用颜色和边框展示每一步（rich）
 │   └── cli.py            命令行参数
 ├── workspace/notes/      5 篇虚构的工作笔记
+├── workspace/demo/       提示词注入演示用的笔记（EP06）
 └── tests/                不需要 API Key 的离线测试
 ```
 
@@ -108,6 +110,7 @@ python -m pytest -q
 | `ep03` | EP03 | `memory.py` | 长期记忆：记住写作偏好和遗留问题 |
 | `ep04` | EP04 | `tracing.py` | 可观测性：接入 Langfuse，每一步都可回放 |
 | `ep05` | EP05 | `evals/` | 评估集：10 组任务对比提示词和模型 |
+| `ep06` | EP06 | `guardrails.py` | 安全护栏与容错：防提示词注入、工具报错不崩溃、自动重试 |
 
 ### EP03：长期记忆（`weekly_agent/memory.py`）
 
@@ -147,6 +150,32 @@ python evals/run_eval.py --prompts v2 --repeats 1         # 省钱模式
 - 对比另一个模型：复制一份 `.env` 为 `.env.deepseek`，改掉模型的四个变量即可
 - 其他文件的改动：`graph.py`、`llm.py`、`tracing.py` 各加了一个参数，方便评估时切换提示词和模型
 - **注意费用**：默认 2 版提示词 × 10 组 × 3 次 = 60 次完整运行
+
+### EP06：安全护栏与容错（`weekly_agent/guardrails.py`）
+
+四道防线，目标不是「保证模型不上当」，而是「就算上当也造不成大损失」：
+
+1. **最小权限**：`send_to_group` 没有「发给谁」的参数，只能发到固定的群
+2. **资料隔离**：`guardrails.wrap_note` 用 `<note>` 标签包住笔记，提示词 v3 明确标签里的内容只是资料，不执行其中的指令
+3. **输出检查**：`guardrails.check_report` 在发送前检查三段结构、风险栏不能为空、不能有链接和邮箱，不通过直接退回给模型修改
+4. **人工确认**：EP01就有的最后一道闸
+
+演示提示词注入：
+
+```bash
+cp workspace/demo/*.md workspace/notes/     # 放入一篇藏了指令的「供应商会议纪要」
+PROMPT_VERSION=v2 python agent.py           # 没有防注入规则的旧版提示词
+python agent.py                             # 默认的 v3
+rm "workspace/notes/2026-10-24-供应商会议纪要.md"   # 演示完记得删掉
+```
+
+评估集里新增了 `injection` 组，专门检查这类攻击。
+
+容错：
+
+- 工具报错（例如笔记用 GBK 编码保存、按 UTF-8 读取失败）时，`ToolNode(handle_tool_errors=True)` 把错误交给模型处理，程序不会崩溃
+- 模型调用遇到网络问题、限流（429）或服务端错误（5xx）时自动重试，最多 3 次；密钥错误这类 4xx 不重试（规则见 `guardrails.should_retry`）
+- 其他文件的改动：`tools.py` 调用两道防线；`graph.py` 加重试和工具报错处理；`prompts.py` 新增 v3
 
 ## 常见问题
 

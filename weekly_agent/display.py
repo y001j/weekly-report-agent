@@ -3,6 +3,8 @@
 只管「怎么显示」，不影响 Agent 的逻辑。用的是 rich 库。
 """
 
+import re
+
 from rich.cells import cell_len, set_cell_size
 from rich.console import Console
 from rich.markdown import Markdown
@@ -59,7 +61,9 @@ def tool_result(msg):
     label = ""
     if call and batch > 1 and call["args"]:
         label = short(next(iter(call["args"].values())), 24) + "："
-    console.print(f"     [green]↳[/] {escape(label)}[dim]{escape(short(msg.content))}[/]")
+    # EP06：笔记外面包了 <note> 标签（资料隔离），显示时去掉，只看正文
+    text = re.sub(r"</?note[^>]*>", "", str(msg.content))
+    console.print(f"     [green]↳[/] {escape(label)}[dim]{escape(short(text))}[/]")
 
 
 def pending(text: str):

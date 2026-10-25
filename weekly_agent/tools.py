@@ -8,7 +8,7 @@ from pathlib import Path
 from langchain_core.tools import tool
 from langgraph.types import interrupt
 
-from . import config
+from . import config, guardrails
 
 
 @tool
@@ -20,8 +20,9 @@ def list_notes() -> list[str]:
 @tool
 def read_note(filename: str) -> str:
     """读取一篇笔记的全文，filename 为 list_notes 返回的文件名"""
-    # 只取文件名，防止读到 notes 目录以外的文件
-    return (config.NOTES_DIR / Path(filename).name).read_text(encoding="utf-8")
+    name = Path(filename).name  # 只取文件名，防止读到 notes 目录以外的文件
+    text = (config.NOTES_DIR / name).read_text(encoding="utf-8")
+    return guardrails.wrap_note(name, text)  # EP06：防线二，资料隔离
 
 
 @tool
@@ -35,8 +36,12 @@ def save_report(content: str) -> str:
 
 @tool
 def send_to_group(text: str) -> str:
-    """把周报发送到团队群，发送前需要人工确认"""
-    decision = interrupt({"待发送内容": text})  # 在这里暂停，等人确认
+    """把周报发送到团队群，发送前会做格式检查并需要人工确认"""
+    # 防线一：最小权限。这个工具没有「发给谁」的参数，只能发到固定的群
+    problems = guardrails.check_report(text)  # EP06：防线三，输出检查
+    if problems:
+        return "未通过发送前检查：" + "；".join(problems) + "。请修改后重新保存并发送"
+    decision = interrupt({"待发送内容": text})  # 防线四：在这里暂停，等人确认
     if decision == "yes":
         # TODO: 调用飞书或企业微信机器人的 webhook
         return "已发送到群"
