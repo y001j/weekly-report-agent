@@ -2,7 +2,7 @@
 
 Agent 自动读取本周工作笔记、整理成周报、保存为文件，**在发送到群之前暂停，等你确认**。
 
-配套视频：【视频链接】
+配套视频：「AI Agent 实战」系列 EP01–EP07【视频链接】
 
 ## 项目结构
 
@@ -70,7 +70,7 @@ cp .env.example .env    # 然后在 .env 里填入你的 API Key
 python agent.py
 ```
 
-运行后你会看到 Agent 每一步调用的工具，最后它会停下来显示待发送的周报，输入 `yes` 发送，输入 `no` 取消。生成的周报保存在 `workspace/output/weekly.md`。
+运行后先在「👤 你：」后面说一句你想让它做什么（直接回车就用默认任务「根据本周笔记写一份周报并发到群里」），然后你会看到 Agent 每一步调用的工具，最后它会停下来显示待发送的周报，输入 `yes` 发送，输入 `no` 取消，也可以直接输入修改意见（EP03起）。生成的周报保存在 `workspace/output/weekly.md`。
 
 ## 换成其他模型
 
@@ -105,7 +105,7 @@ python show_graph.py
 python -m pytest -q
 ```
 
-## 进阶系列：从能跑到能上生产
+## AI Agent 实战：从能跑到能上生产
 
 每一期新增一个模块，代码打了标签。`git checkout ep03` 切到对应版本，`git checkout main` 回到最新版；`git diff ep02 ep03` 查看这一期改了什么。
 
