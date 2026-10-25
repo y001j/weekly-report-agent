@@ -11,6 +11,7 @@ Agent 自动读取本周工作笔记、整理成周报、保存为文件，**在
 ```
 weekly-report-agent/
 ├── agent.py              入口：python agent.py
+├── run.py                入口：定时运行与审批（EP07）
 ├── show_graph.py         把 Agent 的流程图画出来
 ├── evals/                评估集（EP05）
 │   ├── cases.yaml        考卷：每组笔记 + 检查规则
@@ -25,10 +26,15 @@ weekly-report-agent/
 │   ├── memory.py         记忆：跨任务的长期记忆（EP03）
 │   ├── tracing.py        追踪：接入 Langfuse，统计用量（EP04）
 │   ├── guardrails.py     护栏：资料隔离、输出检查、重试规则（EP06）
+│   ├── notify.py         通知：发消息到飞书 / 企业微信群（EP07）
 │   ├── graph.py          图：两个节点、三条边，把大脑和手连起来
 │   ├── runner.py         运行：执行图，遇到暂停就问人
 │   ├── display.py        显示：用颜色和边框展示每一步（rich）
 │   └── cli.py            命令行参数
+├── scheduler/            定时运行与审批（EP07）
+│   ├── jobs.py           start / resume：把一次运行拆成两半
+│   ├── approval.py       审批链接的签名与校验
+│   └── server.py         审批网页
 ├── workspace/notes/      5 篇虚构的工作笔记
 ├── workspace/demo/       提示词注入演示用的笔记（EP06）
 └── tests/                不需要 API Key 的离线测试
@@ -111,6 +117,7 @@ python -m pytest -q
 | `ep04` | EP04 | `tracing.py` | 可观测性：接入 Langfuse，每一步都可回放 |
 | `ep05` | EP05 | `evals/` | 评估集：10 组任务对比提示词和模型 |
 | `ep06` | EP06 | `guardrails.py` | 安全护栏与容错：防提示词注入、工具报错不崩溃、自动重试 |
+| `ep07` | EP07 | `notify.py`、`scheduler/`、`run.py` | 定时运行与手机审批：每周五自动写周报，审批后发送 |
 
 ### EP03：长期记忆（`weekly_agent/memory.py`）
 
@@ -176,6 +183,40 @@ rm "workspace/notes/2026-10-24-供应商会议纪要.md"   # 演示完记得删�
 - 工具报错（例如笔记用 GBK 编码保存、按 UTF-8 读取失败）时，`ToolNode(handle_tool_errors=True)` 把错误交给模型处理，程序不会崩溃
 - 模型调用遇到网络问题、限流（429）或服务端错误（5xx）时自动重试，最多 3 次；密钥错误这类 4xx 不重试（规则见 `guardrails.should_retry`）
 - 其他文件的改动：`tools.py` 调用两道防线；`graph.py` 加重试和工具报错处理；`prompts.py` 新增 v3
+
+### EP07：定时运行与手机审批（`scheduler/`）
+
+把一次运行拆成两半，中间的进度存在 `workspace/state.db`，程序退出、机器重启都不会丢：
+
+```
+定时器 → run.py start → 写周报 → 暂停，把审批链接发到手机 → 退出
+手机点「同意」→ 审批网页 → resume → 从暂停处继续 → 发到群里
+```
+
+```bash
+python run.py serve                  # 启动审批网页（需要能被手机访问，见下文）
+python run.py start                  # 手动触发一次，等同于定时器
+python run.py resume 2026-W43 yes    # 不用网页，直接在命令行审批
+```
+
+定时器（Linux 服务器的 cron，每周五 16:00）：
+
+```bash
+0 16 * * 5  cd /opt/weekly-report-agent && .venv/bin/python run.py start >> logs/cron.log 2>&1
+```
+
+Windows 可以用「任务计划程序」定时运行 `python run.py start`。
+
+几个细节：
+
+- `scheduler/jobs.py` 和EP01的唯一区别是存档器换成了数据库版，Agent 本身一行没改
+- 每周一个任务编号（如 `2026-W43`）。定时器重复触发时不会重新生成，只会重发审批通知
+- 审批网页也可以写修改意见，Agent 改完会再发一次审批，修改意见同样会记进长期记忆
+- 打开审批网页只是查看，不会触发任何操作；只有点按钮提交才会继续，重复点击不会发两次
+- 审批链接带 HMAC 签名（`scheduler/approval.py`），改动任务编号或签名都会被拒绝。**签名只能证明链接是系统发出的，不能证明点击的人是谁**：正式使用请把审批网页放在 HTTPS 和公司统一登录之后，或改用飞书、企业微信的应用卡片回调
+- `weekly_agent/notify.py` 发群消息；飞书群机器人如果开启了「签名校验」，需要按飞书文档在请求里加 timestamp 和 sign
+- 存档演示用 SQLite；多实例部署请换成 PostgreSQL（`langgraph-checkpoint-postgres`），写法几乎一样
+- 其他文件的改动：`tools.py` 的 `send_to_group` 改为调用 `notify.post_to_webhook` 真正发送
 
 ## 常见问题
 
