@@ -8,3 +8,4 @@ workspace/output/
 graph.png
 graph.mmd
 workspace/*.db*
+evals/results/

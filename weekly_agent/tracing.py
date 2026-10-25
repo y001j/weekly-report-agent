@@ -13,8 +13,9 @@ def tracing_enabled() -> bool:
     return bool(config.env("LANGFUSE_PUBLIC_KEY") and config.env("LANGFUSE_SECRET_KEY"))
 
 
-def make_config(thread_id: str) -> dict:
-    """运行配置。配置了 Langfuse 密钥时，自动挂上追踪回调"""
+def make_config(thread_id: str, prompt_version: str | None = None, model_name: str | None = None) -> dict:
+    """运行配置。配置了 Langfuse 密钥时，自动挂上追踪回调。
+    prompt_version、model_name：EP05评估时指定，让每条记录标对版本"""
     run_config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 40}
     if tracing_enabled():
         from langfuse.langchain import CallbackHandler
@@ -26,8 +27,8 @@ def make_config(thread_id: str) -> dict:
             "langfuse_user_id": USER[0],  # 谁用的
             "langfuse_session_id": thread_id,  # 哪一次任务
             "langfuse_tags": [  # 用哪个模型、哪版提示词，评估时按标签对比
-                config.env("MODEL_NAME", "MiniMax-M3.1-Flash"),
-                f"prompt-{PROMPT_VERSION}",
+                model_name or config.env("MODEL_NAME", "MiniMax-M3.1-Flash"),
+                f"prompt-{prompt_version or PROMPT_VERSION}",
             ],
         }
     return run_config

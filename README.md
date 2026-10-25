@@ -12,10 +12,15 @@ Agent 自动读取本周工作笔记、整理成周报、保存为文件，**在
 weekly-report-agent/
 ├── agent.py              入口：python agent.py
 ├── show_graph.py         把 Agent 的流程图画出来
+├── evals/                评估集（EP05）
+│   ├── cases.yaml        考卷：每组笔记 + 检查规则
+│   ├── data/             每组的笔记
+│   ├── scoring.py        评分标准
+│   └── run_eval.py       运行评估、输出对比表
 ├── weekly_agent/
 │   ├── config.py         配置：路径和 .env
 │   ├── llm.py            模型：Agent 的「大脑」
-│   ├── prompts.py        提示词：Agent 的「工作说明书」
+│   ├── prompts.py        提示词：Agent 的「工作说明书」，按版本管理
 │   ├── tools.py          工具：Agent 的「手」（读笔记、存周报、发群消息）
 │   ├── memory.py         记忆：跨任务的长期记忆（EP03）
 │   ├── tracing.py        追踪：接入 Langfuse，统计用量（EP04）
@@ -102,6 +107,7 @@ python -m pytest -q
 | `ep02` | EP02 | 无（代码同 ep01） | 三层能力全景图 |
 | `ep03` | EP03 | `memory.py` | 长期记忆：记住写作偏好和遗留问题 |
 | `ep04` | EP04 | `tracing.py` | 可观测性：接入 Langfuse，每一步都可回放 |
+| `ep05` | EP05 | `evals/` | 评估集：10 组任务对比提示词和模型 |
 
 ### EP03：长期记忆（`weekly_agent/memory.py`）
 
@@ -124,6 +130,23 @@ python agent.py --thread demo-2 # 用新的任务编号运行，验证长期记�
 - 运行结束时终端会打印本次的模型轮数、token 总数和耗时
 - 其他文件的改动：`runner.py` 改用 `tracing.make_config` 生成运行配置；`prompts.py` 加上版本号
 - 追踪记录里有业务原始数据，敏感场景建议[自部署 Langfuse](https://langfuse.com/self-hosting)
+
+### EP05：评估集（`evals/`）
+
+`evals/` 里有 10 组测试，每组是一个笔记文件夹加检查规则，覆盖正常周、相似事项易混、没有风险、外部阻塞、中英文混写等情况。打分全部用规则：三段结构、关键信息、没有编造、先存后发。
+
+```bash
+python evals/run_eval.py                                  # 对比最新两版提示词，每组 3 次
+python evals/run_eval.py --env .env --env .env.deepseek   # 同时对比两个模型
+python evals/run_eval.py --prompts v2 --repeats 1         # 省钱模式
+```
+
+- 提示词在 `weekly_agent/prompts.py` 的 `PROMPTS` 里按版本管理，`.env` 里用 `PROMPT_VERSION` 切换
+- 评估时确认环节自动回答 `no`，不会真的发送；每次运行使用全新的记忆，互不干扰
+- 输出每种组合的通过率、平均轮数、token 和耗时，详细结果（含每次生成的周报）存在 `evals/results/`
+- 对比另一个模型：复制一份 `.env` 为 `.env.deepseek`，改掉模型的四个变量即可
+- 其他文件的改动：`graph.py`、`llm.py`、`tracing.py` 各加了一个参数，方便评估时切换提示词和模型
+- **注意费用**：默认 2 版提示词 × 10 组 × 3 次 = 60 次完整运行
 
 ## 常见问题
 

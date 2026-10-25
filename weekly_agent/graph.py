@@ -12,18 +12,19 @@ from langgraph.store.base import BaseStore
 
 from . import memory
 from .llm import default_llm
-from .prompts import SYSTEM
+from .prompts import PROMPT_VERSION, PROMPTS
 from .tools import TOOLS
 
 ALL_TOOLS = TOOLS + [memory.remember]  # EP03：多了一个「记下来」的工具
 
 
-def build_app(llm=None, store=None, checkpointer=None):
+def build_app(llm=None, store=None, checkpointer=None, prompt_version=None):
     llm = (llm or default_llm()).bind_tools(ALL_TOOLS)  # 告诉模型：你手上有这几样工具
+    prompt = PROMPTS[prompt_version or PROMPT_VERSION]  # EP05：可指定提示词版本，评估时用
 
     # 节点一：让模型思考下一步做什么。store 由框架注入，从里面读出长期记忆
     def agent(state: MessagesState, *, store: BaseStore):
-        system = SYSTEM + f"\n\n你记得的信息：\n{memory.load_memory(store)}"
+        system = prompt + f"\n\n你记得的信息：\n{memory.load_memory(store)}"
         messages = [{"role": "system", "content": system}] + state["messages"]
         return {"messages": [llm.invoke(messages)]}
 

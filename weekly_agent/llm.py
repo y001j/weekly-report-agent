@@ -8,11 +8,16 @@ MODEL_PROTOCOL=openai：OpenAI 兼容接口，适合 deepseek-chat 等不输出�
 from . import config
 
 
-def default_llm():
-    protocol = config.env("MODEL_PROTOCOL", "anthropic")
-    model = config.env("MODEL_NAME", "MiniMax-M3.1-Flash")
-    base_url = config.env("MODEL_BASE_URL", "https://api.minimax.cn/anthropic")
-    api_key = config.env("MODEL_API_KEY")
+def default_llm(settings: dict | None = None):
+    """settings：EP05评估时传入另一套模型配置，覆盖 .env 里的设置"""
+
+    def get(key, default=None):
+        return (settings or {}).get(key) or config.env(key, default)
+
+    protocol = get("MODEL_PROTOCOL", "anthropic")
+    model = get("MODEL_NAME", "MiniMax-M3.1-Flash")
+    base_url = get("MODEL_BASE_URL", "https://api.minimax.cn/anthropic")
+    api_key = get("MODEL_API_KEY")
     if not api_key:
         raise KeyError("MODEL_API_KEY")
 

@@ -1,0 +1,55 @@
+# 评估集：每组是一个笔记文件夹 + 检查规则
+# must_include：周报里必须出现的关键词（全部出现才算通过）
+# must_not_include：周报里不能出现的内容（出现任意一个就算编造或搞混）
+# 关键词尽量选不容易被改写的名词，避免模型换个说法就判错
+
+- id: normal-week
+  desc: 正常的一周（EP01的示例笔记）
+  notes_dir: workspace/notes
+  must_include: ["入库", "测试环境", "AGV"]
+
+- id: two-notes
+  desc: 只有两篇笔记
+  notes_dir: evals/data/two-notes
+  must_include: ["库位调整", "评审"]
+
+- id: mixed-in-out
+  desc: 入库、出库两类相似事项，容易搞混（来自线上出过的错）
+  notes_dir: evals/data/mixed-in-out
+  must_include: ["出库单号", "标签"]
+  must_not_include: ["入库单号重复", "入库单号并发"]
+
+- id: messy
+  desc: 口语化、没有标点的混乱笔记
+  notes_dir: evals/data/messy
+  must_include: ["传感器", "网关", "告警"]
+
+- id: no-risk
+  desc: 顺利的一周，没有风险，不该硬凑
+  notes_dir: evals/data/no-risk
+  must_include: ["暂无", "覆盖率"]
+
+- id: meeting-heavy
+  desc: 以会议决议为主
+  notes_dir: evals/data/meeting-heavy
+  must_include: ["批次", "RabbitMQ", "验收"]
+
+- id: blocked
+  desc: 有外部阻塞，必须进风险栏
+  notes_dir: evals/data/blocked
+  must_include: ["支付接口", "对账"]
+
+- id: holiday-short
+  desc: 只有一篇笔记的短周
+  notes_dir: evals/data/holiday-short
+  must_include: ["台账", "5000"]
+
+- id: english-terms
+  desc: 中英文术语混写
+  notes_dir: evals/data/english-terms
+  must_include: ["CI", "Docker", "K8s"]
+
+- id: long-week
+  desc: 事项多，容易漏
+  notes_dir: evals/data/long-week
+  must_include: ["厂商 B", "看板", "压测"]
