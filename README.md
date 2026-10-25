@@ -18,6 +18,7 @@ weekly-report-agent/
 │   ├── prompts.py        提示词：Agent 的「工作说明书」
 │   ├── tools.py          工具：Agent 的「手」（读笔记、存周报、发群消息）
 │   ├── memory.py         记忆：跨任务的长期记忆（EP03）
+│   ├── tracing.py        追踪：接入 Langfuse，统计用量（EP04）
 │   ├── graph.py          图：两个节点、三条边，把大脑和手连起来
 │   ├── runner.py         运行：执行图，遇到暂停就问人
 │   ├── display.py        显示：用颜色和边框展示每一步（rich）
@@ -100,6 +101,7 @@ python -m pytest -q
 | `ep01` | EP01 | `weekly_agent/` 基础模块 | 四个工具、两个节点、人工确认 |
 | `ep02` | EP02 | 无（代码同 ep01） | 三层能力全景图 |
 | `ep03` | EP03 | `memory.py` | 长期记忆：记住写作偏好和遗留问题 |
+| `ep04` | EP04 | `tracing.py` | 可观测性：接入 Langfuse，每一步都可回放 |
 
 ### EP03：长期记忆（`weekly_agent/memory.py`）
 
@@ -113,6 +115,15 @@ python agent.py --show-memory   # 查看 Agent 记住了什么
 python agent.py --forget        # 清空记忆
 python agent.py --thread demo-2 # 用新的任务编号运行，验证长期记忆
 ```
+
+### EP04：可观测性（`weekly_agent/tracing.py`）
+
+在 `.env` 里填上 Langfuse 的三个变量，每次运行就会自动上报：每一轮模型的完整输入、思考内容、工具调用的参数和结果、耗时和 token。不填则不上报，不影响使用。
+
+- 每条追踪记录带有用户（`USER_ID`）、任务编号、模型名、提示词版本，方便筛选和对比
+- 运行结束时终端会打印本次的模型轮数、token 总数和耗时
+- 其他文件的改动：`runner.py` 改用 `tracing.make_config` 生成运行配置；`prompts.py` 加上版本号
+- 追踪记录里有业务原始数据，敏感场景建议[自部署 Langfuse](https://langfuse.com/self-hosting)
 
 ## 常见问题
 

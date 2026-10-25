@@ -75,3 +75,8 @@ def ask(prompt: str) -> str:
 def finish(text: str):
     console.print()
     console.print(Panel(Markdown(text), title="✅ 完成", border_style="green", padding=(1, 2)))
+
+
+def info(label: str, text: str):
+    """运行结束后的附加信息，例如用量统计（EP04）"""
+    console.print(f"[bold]{label}[/]  [dim]{text}[/]")

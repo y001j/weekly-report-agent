@@ -5,6 +5,7 @@ langchain-core==1.7.0
 langchain-anthropic==1.7.6
 langchain-openai==1.7.2
 python-dotenv==1.2.3
+langfuse==5.0.4
 grandalf==0.8
 rich==15.0.0
 pytest
