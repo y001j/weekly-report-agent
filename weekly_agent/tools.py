@@ -37,10 +37,12 @@ def save_report(content: str) -> str:
 def send_to_group(text: str) -> str:
     """把周报发送到团队群，发送前需要人工确认"""
     decision = interrupt({"待发送内容": text})  # 在这里暂停，等人确认
-    if decision != "yes":
+    if decision == "yes":
+        # TODO: 调用飞书或企业微信机器人的 webhook
+        return "已发送到群"
+    if decision == "no":
         return "用户取消了发送"
-    # TODO: 调用飞书或企业微信机器人的 webhook
-    return "已发送到群"
+    return f"用户要求修改：{decision}"  # EP03：除了 yes/no，也可以直接说修改意见
 
 
 TOOLS = [list_notes, read_note, save_report, send_to_group]

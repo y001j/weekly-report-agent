@@ -17,6 +17,7 @@ weekly-report-agent/
 │   ├── llm.py            模型：Agent 的「大脑」
 │   ├── prompts.py        提示词：Agent 的「工作说明书」
 │   ├── tools.py          工具：Agent 的「手」（读笔记、存周报、发群消息）
+│   ├── memory.py         记忆：跨任务的长期记忆（EP03）
 │   ├── graph.py          图：两个节点、三条边，把大脑和手连起来
 │   ├── runner.py         运行：执行图，遇到暂停就问人
 │   ├── display.py        显示：用颜色和边框展示每一步（rich）
@@ -25,7 +26,7 @@ weekly-report-agent/
 └── tests/                不需要 API Key 的离线测试
 ```
 
-读代码建议按这个顺序：`tools.py` → `prompts.py` → `llm.py` → `graph.py` → `runner.py`。
+读代码建议按这个顺序：`tools.py` → `prompts.py` → `llm.py` → `graph.py` → `runner.py`，再看每期新增的模块。
 
 ```
           ┌──────────────┐
@@ -88,6 +89,29 @@ python show_graph.py
 
 ```bash
 python -m pytest -q
+```
+
+## 进阶系列：从能跑到能上生产
+
+每一期新增一个模块，代码打了标签。`git checkout ep03` 切到对应版本，`git checkout main` 回到最新版；`git diff ep02 ep03` 查看这一期改了什么。
+
+| 标签 | 期数 | 新增模块 | 内容 |
+| --- | --- | --- | --- |
+| `ep01` | EP01 | `weekly_agent/` 基础模块 | 四个工具、两个节点、人工确认 |
+| `ep02` | EP02 | 无（代码同 ep01） | 三层能力全景图 |
+| `ep03` | EP03 | `memory.py` | 长期记忆：记住写作偏好和遗留问题 |
+
+### EP03：长期记忆（`weekly_agent/memory.py`）
+
+- 确认发送时，除了 `yes`、`no`，也可以直接输入修改意见，比如「太长了，每条一行」。Agent 会用 `remember` 工具把长期有效的偏好记下来，再改周报
+- 发送成功后，Agent 会把下周计划记为遗留问题，下周写周报时自动带上
+- 记忆保存在 `workspace/memory.db`，程序退出后也不会丢；不同 `USER_ID` 的记忆互相隔离
+- 其他文件的改动：`graph.py` 把记忆放进提示词、`prompts.py` 加两条规则、`tools.py` 支持修改意见、`cli.py` 加命令行参数
+
+```bash
+python agent.py --show-memory   # 查看 Agent 记住了什么
+python agent.py --forget        # 清空记忆
+python agent.py --thread demo-2 # 用新的任务编号运行，验证长期记忆
 ```
 
 ## 常见问题

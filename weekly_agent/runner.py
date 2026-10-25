@@ -19,7 +19,7 @@ def log_steps(chunk):
 
 
 def run(app, task=TASK, ask=display.ask, thread_id="week-43"):
-    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 30}
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 40}
     payload = {"messages": [("user", task)]}
     display.start()
     while True:
@@ -32,7 +32,9 @@ def run(app, task=TASK, ask=display.ask, thread_id="week-43"):
         if interrupted is None:
             break
         display.pending(interrupted["待发送内容"])
-        answer = ask("确认发送？(yes/no) ").strip().lower()
+        answer = ask("确认发送？输入 yes 发送、no 取消，或直接输入修改意见：").strip()
+        if answer.lower() in ("yes", "no"):
+            answer = answer.lower()
         payload = Command(resume=answer)  # 从暂停处继续
 
     # 用 .text 只取正文：思考型模型的回复里还夹着 thinking 块

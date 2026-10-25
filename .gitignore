@@ -7,3 +7,4 @@ __pycache__/
 workspace/output/
 graph.png
 graph.mmd
+workspace/*.db*

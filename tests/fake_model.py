@@ -37,6 +37,13 @@ class ScriptedModel(BaseChatModel):
             return "save_report", {"content": self.report}
         if last.name == "save_report":
             return "send_to_group", {"text": self.report}
+        # EP03：收到修改意见先记下来再重写；发送成功后记下遗留问题
+        if last.name == "send_to_group" and last.content.startswith("用户要求修改"):
+            return "remember", {"key": "style", "content": last.content.split("：", 1)[1]}
+        if last.name == "send_to_group" and last.content == "已发送到群":
+            return "remember", {"key": "open_issues", "content": "AGV 适配器设计稿"}
+        if last.name == "remember" and "style" in last.content:
+            return "save_report", {"content": self.report}
         return None
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):

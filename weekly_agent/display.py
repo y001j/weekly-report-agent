@@ -12,7 +12,7 @@ from rich.rule import Rule
 
 console = Console(highlight=False)  # 不自动给数字、日期上色，颜色都由下面指定
 
-ICONS = {"list_notes": "📂", "read_note": "📖", "save_report": "💾", "send_to_group": "📤"}
+ICONS = {"list_notes": "📂", "read_note": "📖", "save_report": "💾", "send_to_group": "📤", "remember": "🧠"}
 
 
 def short(value, width=48) -> str:
