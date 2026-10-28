@@ -1,15 +1,20 @@
 """把 Agent 的流程图画出来，不需要 API Key。
 
-运行：python show_graph.py
+运行：python show_graph.py              EP01 的循环版
+      python show_graph.py --pipeline   EP08 的多步骤流水线版
 输出：终端里的字符图 + graph.mmd（Mermaid 源码）+ graph.png（能联网时）
 """
 
 import os
+import sys
 
 if not os.getenv("MODEL_API_KEY"):
     os.environ["MODEL_API_KEY"] = "not-needed-for-drawing"  # 画图不调用模型
 
-from weekly_agent.graph import build_app  # noqa: E402
+if "--pipeline" in sys.argv:
+    from weekly_agent.pipeline import build_pipeline as build_app  # noqa: E402
+else:
+    from weekly_agent.graph import build_app  # noqa: E402
 
 graph = build_app().get_graph()
 

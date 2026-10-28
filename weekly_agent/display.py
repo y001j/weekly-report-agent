@@ -66,6 +66,12 @@ def tool_result(msg):
     console.print(f"     [green]↳[/] {escape(label)}[dim]{escape(short(text))}[/]")
 
 
+def step(icon: str, title: str, detail: str = "", ok: bool = True):
+    """流水线的一个步骤完成了（EP08）"""
+    color = "green" if ok else "yellow"
+    console.print(f"  {icon} [bold {color}]{escape(title)}[/]  [dim]{escape(short(detail, 60))}[/]")
+
+
 def pending(text: str):
     """暂停等确认：把待发送的周报渲染成 Markdown，放进醒目的黄框里"""
     console.print()
