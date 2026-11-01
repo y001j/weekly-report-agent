@@ -2,7 +2,7 @@
 
     START → agent ──要用工具──→ tools ──结果交回──→ agent ──不用工具了──→ END
 
-两个节点，三条边。agent 和 tools 之间的循环，就是所有 Agent 的核心。
+两个工作节点：agent 决定继续调用工具还是结束，tools 执行后回到 agent。
 """
 
 from langgraph.checkpoint.memory import MemorySaver

@@ -3,9 +3,19 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
+
+
+@pytest.fixture(autouse=True)
+def isolated_output(tmp_path, monkeypatch):
+    """测试周报只写入临时目录，不覆盖用户生成的文件。"""
+    from weekly_agent import config
+
+    monkeypatch.setattr(config, "OUTPUT_DIR", tmp_path / "output")
 
 
 def tool_results(app, thread_id="week-43"):

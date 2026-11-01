@@ -3,6 +3,8 @@
 它看上一条工具结果，决定下一步调用什么工具，模拟一个「听话」的 Agent。
 """
 
+import json
+
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -31,7 +33,7 @@ class ScriptedModel(BaseChatModel):
             return "list_notes", {}
         if last.name == "list_notes":
             content = last.content if isinstance(last.content, str) else ""
-            files = eval(content) if content.startswith("[") else []
+            files = json.loads(content) if content.startswith("[") else []
             return "read_note", {"filename": files[0] if files else "missing.md"}
         if last.name == "read_note":
             return "save_report", {"content": self.report}

@@ -26,7 +26,37 @@ def test_read_note_cannot_escape_notes_dir():
 def test_confirm_yes_sends():
     app = build_app(ScriptedModel())
     run(app, ask=lambda _: "yes")
-    assert ("send_to_group", "已发送到群") in tool_results(app)
+    assert ("send_to_group", "模拟发送成功（未调用真实群接口）") in tool_results(app)
+
+
+def test_read_note_rejects_external_symlink(tmp_path, monkeypatch):
+    from weekly_agent import config
+
+    notes = tmp_path / "notes"
+    notes.mkdir()
+    outside = tmp_path / "private.md"
+    outside.write_text("不应读取", encoding="utf-8")
+    (notes / "linked.md").symlink_to(outside)
+    monkeypatch.setattr(config, "NOTES_DIR", notes)
+    with pytest.raises(ValueError, match="只能读取"):
+        tools.read_note.invoke({"filename": "linked.md"})
+
+
+def test_invalid_protocol_has_clear_error(monkeypatch):
+    from weekly_agent.llm import default_llm
+
+    monkeypatch.setenv("MODEL_PROTOCOL", "typo")
+    with pytest.raises(ValueError, match="MODEL_PROTOCOL"):
+        default_llm()
+
+
+def test_report_saved_even_if_sending_cancelled():
+    from fake_model import REPORT
+    from weekly_agent import config
+
+    app = build_app(ScriptedModel())
+    run(app, ask=lambda _: "no")
+    assert (config.OUTPUT_DIR / "weekly.md").read_text(encoding="utf-8") == REPORT
 
 
 def test_confirm_no_cancels():
@@ -36,7 +66,7 @@ def test_confirm_no_cancels():
 
 
 def test_graph_shape():
-    """两个节点、三条边：START→agent，agent⇢tools / agent⇢END，tools→agent"""
+    """两个工作节点，四条路径：START→agent，agent⇢tools / agent⇢END，tools→agent"""
     g = build_app(ScriptedModel()).get_graph()
     assert {"agent", "tools"} <= set(g.nodes)
     edges = {(e.source, e.target) for e in g.edges}

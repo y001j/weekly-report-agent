@@ -10,11 +10,13 @@ from . import config
 
 def default_llm():
     protocol = config.env("MODEL_PROTOCOL", "anthropic")
+    if protocol not in {"anthropic", "openai"}:
+        raise ValueError("MODEL_PROTOCOL 只能是 anthropic 或 openai")
     model = config.env("MODEL_NAME", "MiniMax-M3.1-Flash")
     base_url = config.env("MODEL_BASE_URL", "https://api.minimax.cn/anthropic")
     api_key = config.env("MODEL_API_KEY")
     if not api_key:
-        raise KeyError("MODEL_API_KEY")
+        raise ValueError("请复制 .env.example 为 .env，并填写 MODEL_API_KEY")
 
     if protocol == "anthropic":
         from langchain_anthropic import ChatAnthropic
