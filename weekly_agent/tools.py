@@ -43,7 +43,7 @@ def send_to_group(text: str) -> str:
         return "未通过发送前检查：" + "；".join(problems) + "。请修改后重新保存并发送"
     decision = interrupt({"待发送内容": text})  # 防线四：在这里暂停，等人确认
     if decision == "yes":
-        notify.post_to_webhook(config.env("GROUP_WEBHOOK_URL"), text)  # EP07：真正发到群里
+        notify.post_to_webhook(config.env("GROUP_WEBHOOK_URL"), text, config.env("GROUP_WEBHOOK_SECRET"))  # EP07：真正发到群里
         return "已发送到群"
     if decision == "no":
         return "用户取消了发送"

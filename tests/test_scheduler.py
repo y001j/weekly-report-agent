@@ -21,7 +21,7 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv("APPROVER_WEBHOOK_URL", "https://hook.example.test/approver")
     monkeypatch.setenv("GROUP_WEBHOOK_URL", "https://hook.example.test/group")
     sent = []
-    monkeypatch.setattr(notify, "post_to_webhook", lambda url, text: sent.append((url.rsplit("/", 1)[1], text)))
+    monkeypatch.setattr(notify, "post_to_webhook", lambda url, text, secret=None: sent.append((url.rsplit("/", 1)[1], text)))
     db = tmp_path / "state.db"
     store = InMemoryStore()
 
@@ -119,3 +119,11 @@ def test_webhook_payload_formats(monkeypatch):
     notify.post_to_webhook("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=x", "hi")
     assert calls[0] == {"msg_type": "text", "content": {"text": "hi"}}
     assert calls[1] == {"msgtype": "text", "text": {"content": "hi"}}
+
+    # 飞书开了签名校验：带上时间戳和签名；企业微信群机器人没有签名，密钥被忽略
+    monkeypatch.setattr(notify.time, "time", lambda: 1700000000.5)
+    notify.post_to_webhook("https://open.feishu.cn/open-apis/bot/v2/hook/x", "hi", secret="s")
+    notify.post_to_webhook("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=x", "hi", secret="s")
+    assert calls[2] == {"msg_type": "text", "content": {"text": "hi"}, "timestamp": "1700000000",
+                        "sign": notify.feishu_sign("s", 1700000000)}
+    assert calls[3] == calls[1]

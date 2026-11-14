@@ -47,7 +47,7 @@ def pending_text(app, thread: str) -> str | None:
 def notify_approver(thread: str, text: str) -> None:
     preview = text if len(text) <= 300 else text[:300] + "……"
     message = f"【周报待审批】{thread}\n\n{preview}\n\n点击查看并审批：{review_url(thread)}"
-    notify.post_to_webhook(config.env("APPROVER_WEBHOOK_URL"), message)
+    notify.post_to_webhook(config.env("APPROVER_WEBHOOK_URL"), message, config.env("APPROVER_WEBHOOK_SECRET"))
 
 
 # ---------- 前半段：定时器调用 ----------

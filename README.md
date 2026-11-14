@@ -216,7 +216,7 @@ Windows 可以用「任务计划程序」定时运行 `python run.py start`。
 - 审批网页也可以写修改意见，Agent 改完会再发一次审批，修改意见同样会记进长期记忆
 - 打开审批网页只是查看，不会触发任何操作；只有点按钮提交才会继续，重复点击不会发两次
 - 审批链接带 HMAC 签名（`scheduler/approval.py`），改动任务编号或签名都会被拒绝。**签名只能证明链接是系统发出的，不能证明点击的人是谁**：正式使用请把审批网页放在 HTTPS 和公司统一登录之后，或改用飞书、企业微信的应用卡片回调
-- `weekly_agent/notify.py` 发群消息；飞书群机器人如果开启了「签名校验」，需要按飞书文档在请求里加 timestamp 和 sign
+- `weekly_agent/notify.py` 发群消息；飞书群机器人如果开启了「签名校验」，把密钥填进 `GROUP_WEBHOOK_SECRET` / `APPROVER_WEBHOOK_SECRET`，请求会自动带上 timestamp 和 sign
 - 存档演示用 SQLite；多实例部署请换成 PostgreSQL（`langgraph-checkpoint-postgres`），写法几乎一样
 - 其他文件的改动：`tools.py` 的 `send_to_group` 改为调用 `notify.post_to_webhook` 真正发送
 

@@ -149,7 +149,7 @@ def build_pipeline(llm=None, store=None, checkpointer=None):
         out = config.OUTPUT_DIR / "weekly.md"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(state["report"], encoding="utf-8")
-        notify.post_to_webhook(config.env("GROUP_WEBHOOK_URL"), state["report"])  # EP07
+        notify.post_to_webhook(config.env("GROUP_WEBHOOK_URL"), state["report"], config.env("GROUP_WEBHOOK_SECRET"))  # EP07
         if plan_text := next_week_plan(state["report"]):
             store.put(memory.USER, "open_issues", {"content": plan_text})  # EP03：下周跟进
         return {}
