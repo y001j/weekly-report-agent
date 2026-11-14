@@ -18,6 +18,9 @@ def isolated_workspace(tmp_path, monkeypatch):
 
     monkeypatch.setattr(config, "WORKDIR", tmp_path)
     monkeypatch.setattr(config, "OUTPUT_DIR", tmp_path / "output")
+    # .env 里的真实群机器人地址不能带进测试：否则跑一次测试就真的往群里发一条
+    for key in ("GROUP_WEBHOOK_URL", "APPROVER_WEBHOOK_URL", "GROUP_WEBHOOK_SECRET", "APPROVER_WEBHOOK_SECRET"):
+        monkeypatch.delenv(key, raising=False)
 
 
 def tool_results(app, thread_id="week-43"):
